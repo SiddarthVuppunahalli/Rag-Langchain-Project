@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+langchain
+langchain-community
+langchain-google-genai
+chromadb
+pydantic
+python-dotenv
+tiktoken
+unstructured
+markdown
+langchain-huggingface
+sentence-transformers
