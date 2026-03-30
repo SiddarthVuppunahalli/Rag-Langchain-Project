@@ -6,6 +6,9 @@ langchain-google-genai
 chromadb
 pydantic
 python-dotenv
+ragas
+pandas
+datasets
 tiktoken
 unstructured
 markdown

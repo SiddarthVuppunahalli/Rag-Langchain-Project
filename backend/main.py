@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from .rag_pipeline import get_rag_chain
+from rag_pipeline import get_rag_chain
 
 app = FastAPI(title="IT Helpdesk RAG API")
 

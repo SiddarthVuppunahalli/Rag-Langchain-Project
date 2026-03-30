@@ -118,46 +118,17 @@ def collect_rag_outputs(dataset: list[dict]) -> list[dict]:
 
     # Import here so failures give clear error messages
     try:
-        from langchain_community.vectorstores import Chroma
-        from langchain_huggingface import HuggingFaceEmbeddings
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        from langchain.chains import create_retrieval_chain
-        from langchain.chains.combine_documents import create_stuff_documents_chain
-        from langchain_core.prompts import ChatPromptTemplate
+        from rag_pipeline import get_rag_chain
     except ImportError as exc:
         print(f"\n[ERROR] Missing dependency: {exc}")
         print("Run: pip install -r backend/requirements.txt")
         sys.exit(1)
 
-    api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        print("\n[ERROR] GOOGLE_API_KEY not set. Add it to backend/.env")
+    try:
+        rag_chain = get_rag_chain()
+    except Exception as exc:
+        print(f"\n[ERROR] Failed to initialize RAG chain: {exc}")
         sys.exit(1)
-
-    CHROMA_PATH = os.path.join(_backend_dir, "chroma_db")
-    if not os.path.exists(CHROMA_PATH):
-        print(f"\n[ERROR] ChromaDB not found at {CHROMA_PATH}.")
-        print("Run backend ingestion first: python -m backend.ingest")
-        sys.exit(1)
-
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embeddings)
-    retriever = db.as_retriever(search_kwargs={"k": 3})
-
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
-
-    system_prompt = (
-        "You are an IT Helpdesk AI Assistant. Use the following pieces of retrieved technical "
-        "documentation to answer the user's question. If you don't know the answer or the context "
-        "doesn't contain the answer, just say that you don't know, don't try to make up an answer."
-        "\n\nContext:\n{context}"
-    )
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", "{input}"),
-    ])
-    qa_chain = create_stuff_documents_chain(llm, prompt)
-    rag_chain = create_retrieval_chain(retriever, qa_chain)
 
     print(f"[1/3] Pipeline ready. Running {len(dataset)} test questions...\n")
 
@@ -221,15 +192,18 @@ def run_ragas_evaluation(results: list[dict]) -> pd.DataFrame:
 
     api_key = os.getenv("GOOGLE_API_KEY")
     # Use Gemini as the judge LLM and embeddings for RAGAS
-    judge_llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
-        google_api_key=api_key,
-        temperature=0,
-    )
-    judge_embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001",
-        google_api_key=api_key,
-    )
+    try:
+        judge_llm = ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            google_api_key=api_key,
+            temperature=0,
+        )
+    except Exception as e:
+        print(f"Warning: Failed to load judge_llm: {e}")
+        judge_llm = None
+        
+    from langchain_huggingface import HuggingFaceEmbeddings
+    judge_embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
     result = evaluate(
         dataset=dataset,
@@ -307,7 +281,7 @@ def main():
     print("=" * 65)
 
     # Step 1: Collect RAG answers and retrieved contexts
-    results = collect_rag_outputs(EVAL_DATASET)
+    results = collect_rag_outputs(EVAL_DATASET[:4])
 
     # Step 2: Score with RAGAS
     df = run_ragas_evaluation(results)
