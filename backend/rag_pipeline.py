@@ -1,61 +1,117 @@
-import os
+from __future__ import annotations
+
+from typing import Any
+
 from langchain_community.vectorstores import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.documents import Document
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
-from dotenv import load_dotenv
+from langchain_huggingface import HuggingFaceEmbeddings
 
-load_dotenv()
+from config import (
+    CHROMA_PATH,
+    DEFAULT_CHAT_MODEL,
+    DEFAULT_EMBEDDING_MODEL,
+    DEFAULT_TOP_K,
+    GOOGLE_API_KEY,
+)
 
-CHROMA_PATH = os.path.join(os.path.dirname(__file__), "chroma_db")
 
-def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
+SYSTEM_PROMPT = """You are an SEC filings research assistant.
 
-def get_rag_chain():
-    # Load embeddings and vector store
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embeddings)
-    retriever = db.as_retriever(search_kwargs={"k": 3})
+Answer the user's question using only the retrieved filing excerpts. If the context does not
+support the answer, say that you do not have enough evidence from the available filings.
 
-    # Initialize LLM
-    api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        raise ValueError("GOOGLE_API_KEY environment variable not set. Please add it to your .env file.")
-        
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
+When you answer:
+- Prioritize precise, evidence-backed language.
+- Mention the company and filing type when relevant.
+- Keep the answer concise but substantive.
+- Do not invent financial facts that are not in the retrieved excerpts.
+"""
 
-    # Define Prompt
-    system_prompt = (
-        "You are an IT Helpdesk AI Assistant. Use the following pieces of retrieved technical documentation "
-        "to answer the user's question. If you don't know the answer or the context doesn't contain the answer, "
-        "just say that you don't know, don't try to make up an answer."
-        "\n\n"
-        "Context:\n{context}"
-    )
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", "{input}"),
-    ])
 
-    # Construct the LCEL chain
-    setup_and_retrieval = RunnablePassthrough.assign(
-        context=(lambda x: x["input"]) | retriever
-    )
-    
-    def format_input_for_prompt(x):
+def format_context(documents: list[Document]) -> str:
+    sections: list[str] = []
+    for index, document in enumerate(documents, start=1):
+        metadata = document.metadata
+        sections.append(
+            "\n".join(
+                [
+                    f"[Source {index}]",
+                    f"Ticker: {metadata.get('ticker', 'Unknown')}",
+                    f"Filing Type: {metadata.get('filing_type', 'Unknown')}",
+                    f"Filing Date: {metadata.get('filing_date', 'Unknown')}",
+                    f"Section: {metadata.get('section_heading', metadata.get('section', 'Unknown'))}",
+                    document.page_content,
+                ]
+            )
+        )
+    return "\n\n".join(sections)
+
+
+def build_filter(company: str | None = None, filing_type: str | None = None) -> dict[str, Any] | None:
+    filters: dict[str, Any] = {}
+    if company:
+        filters["ticker"] = company.upper()
+    if filing_type:
+        filters["filing_type"] = filing_type.upper()
+    return filters or None
+
+
+class SecRagPipeline:
+    def __init__(self) -> None:
+        if not GOOGLE_API_KEY:
+            raise ValueError("GOOGLE_API_KEY is not set. Add it to backend/.env or the project .env.")
+
+        embeddings = HuggingFaceEmbeddings(model_name=DEFAULT_EMBEDDING_MODEL)
+        self.vectorstore = Chroma(
+            persist_directory=str(CHROMA_PATH),
+            embedding_function=embeddings,
+        )
+        self.llm = ChatGoogleGenerativeAI(
+            model=DEFAULT_CHAT_MODEL,
+            google_api_key=GOOGLE_API_KEY,
+            temperature=0,
+        )
+
+    def retrieve(
+        self,
+        question: str,
+        company: str | None = None,
+        filing_type: str | None = None,
+        top_k: int = DEFAULT_TOP_K,
+    ) -> list[Document]:
+        search_kwargs: dict[str, Any] = {"k": top_k}
+        metadata_filter = build_filter(company=company, filing_type=filing_type)
+        if metadata_filter:
+            search_kwargs["filter"] = metadata_filter
+
+        retriever = self.vectorstore.as_retriever(search_kwargs=search_kwargs)
+        return retriever.invoke(question)
+
+    def answer(
+        self,
+        question: str,
+        company: str | None = None,
+        filing_type: str | None = None,
+        top_k: int = DEFAULT_TOP_K,
+    ) -> dict[str, Any]:
+        documents = self.retrieve(
+            question=question,
+            company=company,
+            filing_type=filing_type,
+            top_k=top_k,
+        )
+
+        context = format_context(documents)
+        prompt = f"{SYSTEM_PROMPT}\n\nQuestion:\n{question}\n\nContext:\n{context}"
+        answer = self.llm.invoke(prompt).content
+
         return {
-            "context": format_docs(x["context"]),
-            "input": x["input"]
+            "answer": answer,
+            "context": documents,
+            "retrieval_count": len(documents),
         }
-        
-    answer_chain = format_input_for_prompt | prompt | llm | StrOutputParser()
-    
-    rag_chain = setup_and_retrieval | RunnablePassthrough.assign(
-        answer=answer_chain
-    )
-    
-    return rag_chain
 
+
+def get_rag_pipeline() -> SecRagPipeline:
+    return SecRagPipeline()

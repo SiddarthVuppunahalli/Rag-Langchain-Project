@@ -1,26 +1,34 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
+import type { Metadata } from 'next';
+import { IBM_Plex_Sans, IBM_Plex_Serif } from 'next/font/google';
+import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] })
+const sans = IBM_Plex_Sans({
+  subsets: ['latin'],
+  variable: '--font-plex-sans',
+  weight: ['400', '500', '600', '700'],
+});
+
+const serif = IBM_Plex_Serif({
+  subsets: ['latin'],
+  variable: '--font-plex-serif',
+  weight: ['400', '500', '600'],
+});
 
 export const metadata: Metadata = {
-  title: 'IT Helpdesk RAG Assistant',
-  description: 'AI-powered IT troubleshooting bot',
-}
+  title: 'SEC Filing RAG Analyst',
+  description: 'A retrieval-augmented analysis workspace for SEC 10-K and 10-Q filings.',
+};
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-slate-50 text-slate-900 min-h-screen flex flex-col`}>
-        <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full p-4 md:p-8">
-          {children}
-        </main>
+      <body className={`${sans.variable} ${serif.variable} font-sans`}>
+        {children}
       </body>
     </html>
-  )
+  );
 }
