@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from time import perf_counter
 from typing import Any
 
 from langchain_community.vectorstores import Chroma
@@ -28,6 +29,46 @@ When you answer:
 - Do not invent financial facts that are not in the retrieved excerpts.
 """
 
+SECTION_INTENT_RULES = {
+    "risk_factors": [
+        "risk",
+        "risks",
+        "competition",
+        "competitive",
+        "concentration",
+        "supplier",
+        "supply",
+        "manufacturing",
+        "dependence",
+        "inventory",
+        "customer concentration",
+    ],
+    "mda": [
+        "revenue",
+        "operating",
+        "performance",
+        "results",
+        "quarter",
+        "demand",
+        "momentum",
+        "growth",
+        "margin",
+        "profitability",
+        "commentary",
+    ],
+    "business": [
+        "business",
+        "segment",
+        "segments",
+        "offerings",
+        "products",
+        "services",
+        "platforms",
+        "markets",
+        "describe",
+    ],
+}
+
 
 def format_context(documents: list[Document]) -> str:
     sections: list[str] = []
@@ -49,12 +90,44 @@ def format_context(documents: list[Document]) -> str:
 
 
 def build_filter(company: str | None = None, filing_type: str | None = None) -> dict[str, Any] | None:
-    filters: dict[str, Any] = {}
+    clauses: list[dict[str, Any]] = []
     if company:
-        filters["ticker"] = company.upper()
+        clauses.append({"ticker": company.upper()})
     if filing_type:
-        filters["filing_type"] = filing_type.upper()
-    return filters or None
+        clauses.append({"filing_type": filing_type.upper()})
+
+    if not clauses:
+        return None
+    if len(clauses) == 1:
+        return clauses[0]
+    return {"$and": clauses}
+
+
+def combine_filters(
+    base_filter: dict[str, Any] | None,
+    extra_filter: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not base_filter:
+        return extra_filter
+    if not extra_filter:
+        return base_filter
+    return {"$and": [base_filter, extra_filter]}
+
+
+def infer_section_priority(question: str) -> list[str]:
+    normalized_question = question.lower()
+    scores: list[tuple[str, int]] = []
+
+    for section, keywords in SECTION_INTENT_RULES.items():
+        score = sum(1 for keyword in keywords if keyword in normalized_question)
+        scores.append((section, score))
+
+    ranked_sections = [section for section, score in sorted(scores, key=lambda item: item[1], reverse=True) if score > 0]
+    fallback_order = ["mda", "business", "risk_factors"]
+    for section in fallback_order:
+        if section not in ranked_sections:
+            ranked_sections.append(section)
+    return ranked_sections
 
 
 class SecRagPipeline:
@@ -80,13 +153,46 @@ class SecRagPipeline:
         filing_type: str | None = None,
         top_k: int = DEFAULT_TOP_K,
     ) -> list[Document]:
-        search_kwargs: dict[str, Any] = {"k": top_k}
-        metadata_filter = build_filter(company=company, filing_type=filing_type)
-        if metadata_filter:
-            search_kwargs["filter"] = metadata_filter
+        base_filter = build_filter(company=company, filing_type=filing_type)
+        section_priority = infer_section_priority(question)
 
-        retriever = self.vectorstore.as_retriever(search_kwargs=search_kwargs)
-        return retriever.invoke(question)
+        gathered_documents: list[Document] = []
+        seen_chunk_ids: set[str] = set()
+
+        for section in section_priority:
+            if len(gathered_documents) >= top_k:
+                break
+
+            section_filter = combine_filters(base_filter, {"section": section})
+            section_retriever = self.vectorstore.as_retriever(
+                search_kwargs={"k": top_k, "filter": section_filter} if section_filter else {"k": top_k}
+            )
+            for document in section_retriever.invoke(question):
+                chunk_id = document.metadata.get("chunk_id")
+                if chunk_id in seen_chunk_ids:
+                    continue
+                gathered_documents.append(document)
+                if chunk_id:
+                    seen_chunk_ids.add(chunk_id)
+                if len(gathered_documents) >= top_k:
+                    break
+
+        if len(gathered_documents) < top_k:
+            fallback_kwargs: dict[str, Any] = {"k": top_k}
+            if base_filter:
+                fallback_kwargs["filter"] = base_filter
+            fallback_retriever = self.vectorstore.as_retriever(search_kwargs=fallback_kwargs)
+            for document in fallback_retriever.invoke(question):
+                chunk_id = document.metadata.get("chunk_id")
+                if chunk_id in seen_chunk_ids:
+                    continue
+                gathered_documents.append(document)
+                if chunk_id:
+                    seen_chunk_ids.add(chunk_id)
+                if len(gathered_documents) >= top_k:
+                    break
+
+        return gathered_documents[:top_k]
 
     def answer(
         self,
@@ -95,21 +201,33 @@ class SecRagPipeline:
         filing_type: str | None = None,
         top_k: int = DEFAULT_TOP_K,
     ) -> dict[str, Any]:
+        started_at = perf_counter()
+        retrieval_started_at = perf_counter()
         documents = self.retrieve(
             question=question,
             company=company,
             filing_type=filing_type,
             top_k=top_k,
         )
+        retrieval_ms = (perf_counter() - retrieval_started_at) * 1000
 
         context = format_context(documents)
         prompt = f"{SYSTEM_PROMPT}\n\nQuestion:\n{question}\n\nContext:\n{context}"
+        generation_started_at = perf_counter()
         answer = self.llm.invoke(prompt).content
+        generation_ms = (perf_counter() - generation_started_at) * 1000
+        total_ms = (perf_counter() - started_at) * 1000
 
         return {
             "answer": answer,
             "context": documents,
             "retrieval_count": len(documents),
+            "metrics": {
+                "retrieval_ms": round(retrieval_ms, 2),
+                "generation_ms": round(generation_ms, 2),
+                "total_ms": round(total_ms, 2),
+                "context_characters": len(context),
+            },
         }
 
 

@@ -36,7 +36,7 @@ EVAL_RESULTS_DIR = BASE_DIR / "eval_results"
 
 DEFAULT_CHUNK_SIZE = int(os.getenv("RAG_CHUNK_SIZE", "900"))
 DEFAULT_CHUNK_OVERLAP = int(os.getenv("RAG_CHUNK_OVERLAP", "150"))
-DEFAULT_TOP_K = int(os.getenv("RAG_TOP_K", "4"))
+DEFAULT_TOP_K = int(os.getenv("RAG_TOP_K", "3"))
 DEFAULT_CHAT_MODEL = os.getenv("RAG_CHAT_MODEL", "gemini-2.5-flash")
 DEFAULT_EMBEDDING_MODEL = os.getenv("RAG_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 
@@ -45,4 +45,3 @@ SEC_USER_AGENT = os.getenv(
     "SEC_USER_AGENT",
     "SEC Filing RAG Analyst contact@example.com",
 )
-

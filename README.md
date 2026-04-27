@@ -135,19 +135,3 @@ python main.py
 ```
 
 Then start the frontend and open `http://localhost:3000`.
-
-## Planned Portfolio Improvements
-
-- stronger section parsing for SEC item boundaries
-- broader company and filing coverage
-- evaluation experiments across chunk size, overlap, and top-k retrieval
-- richer evidence display in the frontend
-- benchmark datasets with both retrieval and answer-quality metrics
-- clearer README architecture diagrams and experiment summaries
-
-## Resume Direction
-
-This project is being shaped to support bullets like:
-
-- Built a section-aware RAG system over SEC filings with metadata-filtered retrieval and citation-grounded answers.
-- Evaluated retrieval quality across benchmark questions using section hit rate, latency, and answer-quality metrics.

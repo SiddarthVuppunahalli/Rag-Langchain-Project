@@ -43,6 +43,7 @@ class ChatResponse(BaseModel):
     answer: str
     retrieval_count: int
     sources: list[SourceItem]
+    metrics: dict[str, float | int]
 
 
 def read_available_filings() -> list[dict]:
@@ -109,7 +110,7 @@ async def chat_endpoint(request: ChatRequest):
                 filing_date=document.metadata.get("filing_date", "Unknown"),
                 section=document.metadata.get("section", "unknown"),
                 section_heading=document.metadata.get("section_heading", "Unknown"),
-                excerpt=document.page_content[:500],
+                excerpt=" ".join(document.page_content.split())[:320],
                 source_file=document.metadata.get("source_file", ""),
                 source_url=document.metadata.get("source_url", ""),
             )
@@ -119,6 +120,7 @@ async def chat_endpoint(request: ChatRequest):
             answer=response["answer"],
             retrieval_count=response["retrieval_count"],
             sources=sources,
+            metrics=response["metrics"],
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))

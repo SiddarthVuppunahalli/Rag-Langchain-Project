@@ -9,13 +9,25 @@ from pathlib import Path
 from config import PARSED_FILINGS_DIR, RAW_FILINGS_DIR
 
 
-SECTION_PATTERNS = [
-    ("business", r"item\s+1\.*\s+business"),
-    ("risk_factors", r"item\s+1a\.*\s+risk\s+factors"),
-    ("mda", r"item\s+7\.*\s+management(?:'|\u2019)?s\s+discussion\s+and\s+analysis"),
+SECTION_SPECS = [
+    {
+        "name": "business",
+        "start_pattern": r"item\s+1\.*\s+business",
+        "end_patterns": [r"item\s+1a\.*\s+risk\s+factors"],
+    },
+    {
+        "name": "risk_factors",
+        "start_pattern": r"item\s+1a\.*\s+risk\s+factors",
+        "end_patterns": [r"item\s+1b\.*", r"item\s+2\.*"],
+    },
+    {
+        "name": "mda",
+        "start_pattern": r"item\s+7\.*\s+management(?:'|\u2019)?s\s+discussion\s+and\s+analysis",
+        "end_patterns": [r"item\s+7a\.*", r"item\s+8\.*"],
+    },
 ]
 
-BOUNDARY_PATTERN = re.compile(r"item\s+\d+[a-z]?\.*", re.IGNORECASE)
+MIN_SECTION_SPAN = 1500
 
 
 @dataclass
@@ -37,21 +49,41 @@ def clean_filing_text(raw_text: str) -> str:
     return text.strip()
 
 
-def find_section_span(text: str, start_pattern: str) -> tuple[int, int] | None:
-    start_match = re.search(start_pattern, text, flags=re.IGNORECASE)
-    if not start_match:
+def find_section_span(text: str, start_pattern: str, end_patterns: list[str]) -> tuple[int, int] | None:
+    candidates: list[tuple[int, int]] = []
+    for start_match in re.finditer(start_pattern, text, flags=re.IGNORECASE):
+        start = start_match.start()
+        end = len(text)
+
+        for end_pattern in end_patterns:
+            for end_match in re.finditer(end_pattern, text, flags=re.IGNORECASE):
+                if end_match.start() <= start_match.end():
+                    continue
+                if end_match.start() - start < MIN_SECTION_SPAN:
+                    continue
+                end = min(end, end_match.start())
+                break
+
+        if end <= start:
+            continue
+        candidates.append((start, end))
+
+    if not candidates:
         return None
 
-    start = start_match.start()
-    boundaries = list(BOUNDARY_PATTERN.finditer(text, pos=start_match.end()))
-    end = boundaries[0].start() if boundaries else len(text)
-    return start, end
+    # SEC filings often repeat section headings in a table of contents near the top.
+    # Choosing the longest candidate span usually selects the real body section instead.
+    return max(candidates, key=lambda span: span[1] - span[0])
 
 
 def extract_sections(clean_text: str) -> list[ParsedSection]:
     sections: list[ParsedSection] = []
-    for name, pattern in SECTION_PATTERNS:
-        span = find_section_span(clean_text, pattern)
+    for section_spec in SECTION_SPECS:
+        span = find_section_span(
+            clean_text,
+            section_spec["start_pattern"],
+            section_spec["end_patterns"],
+        )
         if not span:
             continue
 
@@ -60,7 +92,7 @@ def extract_sections(clean_text: str) -> list[ParsedSection]:
         heading_text = " ".join(content.split(" ", 8)[:8])
         sections.append(
             ParsedSection(
-                section=name,
+                section=section_spec["name"],
                 heading=heading_text,
                 content=content,
                 character_count=len(content),

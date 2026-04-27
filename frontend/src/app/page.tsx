@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, startTransition, useEffect, useMemo, useState } from 'react';
 
 type CompanyOption = {
   ticker: string;
@@ -23,6 +23,12 @@ type ChatResponse = {
   answer: string;
   retrieval_count: number;
   sources: SourceItem[];
+  metrics: {
+    retrieval_ms: number;
+    generation_ms: number;
+    total_ms: number;
+    context_characters: number;
+  };
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
@@ -40,8 +46,10 @@ export default function Home() {
   const [answer, setAnswer] = useState('');
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [retrievalCount, setRetrievalCount] = useState(0);
+  const [metrics, setMetrics] = useState<ChatResponse['metrics'] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showAllSources, setShowAllSources] = useState(false);
 
   useEffect(() => {
     async function loadCompanies() {
@@ -66,6 +74,13 @@ export default function Home() {
   const selectedCompanyLabel = useMemo(() => {
     return companies.find((company) => company.ticker === selectedCompany)?.company ?? selectedCompany;
   }, [companies, selectedCompany]);
+
+  const visibleSources = useMemo(() => {
+    if (showAllSources) {
+      return sources;
+    }
+    return sources.slice(0, 2);
+  }, [showAllSources, sources]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -95,9 +110,13 @@ export default function Home() {
       }
 
       const data: ChatResponse = await response.json();
-      setAnswer(data.answer);
-      setSources(data.sources);
-      setRetrievalCount(data.retrieval_count);
+      startTransition(() => {
+        setAnswer(data.answer);
+        setSources(data.sources);
+        setRetrievalCount(data.retrieval_count);
+        setMetrics(data.metrics);
+        setShowAllSources(false);
+      });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Unexpected query error.');
     } finally {
@@ -141,12 +160,26 @@ export default function Home() {
                   <div className="mt-1 text-lg font-semibold">{retrievalCount}</div>
                 </div>
               </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="text-xs uppercase tracking-[0.2em] text-slate-500">Total Query Time</div>
+                  <div className="mt-1 text-lg font-semibold">
+                    {metrics ? `${(metrics.total_ms / 1000).toFixed(2)}s` : '--'}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="text-xs uppercase tracking-[0.2em] text-slate-500">Prompt Context Size</div>
+                  <div className="mt-1 text-lg font-semibold">
+                    {metrics ? metrics.context_characters.toLocaleString() : '--'}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-          <div className="rounded-[2rem] border border-slate-200/80 bg-white/80 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
+        <section className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.1fr)]">
+          <div className="rounded-[2rem] border border-slate-200/80 bg-white/80 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur xl:sticky xl:top-6">
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-2">
@@ -205,7 +238,7 @@ export default function Home() {
                 disabled={isLoading}
                 type="submit"
               >
-                {isLoading ? 'Running SEC retrieval...' : 'Run Filing Query'}
+                {isLoading ? 'Running SEC retrieval and generation...' : 'Run Filing Query'}
               </button>
 
               {error ? (
@@ -225,6 +258,16 @@ export default function Home() {
                   {retrievalCount} evidence chunk{retrievalCount === 1 ? '' : 's'}
                 </div>
               </div>
+              {metrics ? (
+                <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
+                  <span className="rounded-full bg-slate-100 px-3 py-1">
+                    retrieval {(metrics.retrieval_ms / 1000).toFixed(2)}s
+                  </span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1">
+                    generation {(metrics.generation_ms / 1000).toFixed(2)}s
+                  </span>
+                </div>
+              ) : null}
               <div className="mt-5 rounded-[1.75rem] bg-slate-50 px-5 py-5 text-sm leading-7 text-slate-700">
                 {answer || 'Run a query to generate a filing-grounded answer and inspect the supporting evidence.'}
               </div>
@@ -236,15 +279,24 @@ export default function Home() {
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Evidence</p>
                   <h2 className="mt-2 text-2xl font-semibold text-slate-950">Retrieved Filing Excerpts</h2>
                 </div>
+                {sources.length > 2 ? (
+                  <button
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
+                    onClick={() => setShowAllSources((current) => !current)}
+                    type="button"
+                  >
+                    {showAllSources ? 'Show fewer' : `Show all ${sources.length}`}
+                  </button>
+                ) : null}
               </div>
 
-              <div className="mt-5 space-y-4">
+              <div className="mt-5 max-h-[70vh] space-y-4 overflow-y-auto pr-1">
                 {sources.length === 0 ? (
                   <div className="rounded-[1.75rem] border border-dashed border-slate-200 bg-slate-50 px-5 py-6 text-sm text-slate-500">
                     Source excerpts will appear here with filing metadata once a query runs.
                   </div>
                 ) : (
-                  sources.map((source, index) => (
+                  visibleSources.map((source, index) => (
                     <article
                       key={`${source.ticker}-${source.filing_date}-${index}`}
                       className="rounded-[1.75rem] border border-slate-200 bg-slate-50 px-5 py-5"

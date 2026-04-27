@@ -1,0 +1,236 @@
+[
+  {
+    "id": "aapl_risk_supply_chain",
+    "difficulty": "standard",
+    "question": "What risks does Apple describe around supply chain concentration or manufacturing dependence?",
+    "company": "AAPL",
+    "filing_type": "10-K",
+    "expected_sections": ["risk_factors", "business"],
+    "expected_keywords": ["supply", "manufacturing", "supplier", "component", "china"]
+  },
+  {
+    "id": "aapl_mda_revenue",
+    "difficulty": "standard",
+    "question": "How does Apple describe recent revenue performance and business conditions?",
+    "company": "AAPL",
+    "filing_type": "10-Q",
+    "expected_sections": ["mda"],
+    "expected_keywords": ["revenue", "sales", "net", "products", "services"]
+  },
+  {
+    "id": "aapl_business_segments",
+    "difficulty": "standard",
+    "question": "How does Apple describe its products and services business segments?",
+    "company": "AAPL",
+    "filing_type": "10-K",
+    "expected_sections": ["business"],
+    "expected_keywords": ["iphone", "mac", "ipad", "services", "wearables"]
+  },
+  {
+    "id": "aapl_risk_regulation",
+    "difficulty": "standard",
+    "question": "What regulatory or legal risks does Apple highlight?",
+    "company": "AAPL",
+    "filing_type": "10-K",
+    "expected_sections": ["risk_factors"],
+    "expected_keywords": ["regulation", "legal", "laws", "government", "compliance"]
+  },
+  {
+    "id": "aapl_mda_services",
+    "difficulty": "standard",
+    "question": "How does Apple discuss services revenue or services growth?",
+    "company": "AAPL",
+    "filing_type": "10-Q",
+    "expected_sections": ["mda"],
+    "expected_keywords": ["services", "revenue", "growth", "margin", "sales"]
+  },
+  {
+    "id": "aapl_business_distribution",
+    "difficulty": "standard",
+    "question": "How does Apple describe the way it sells and distributes its products?",
+    "company": "AAPL",
+    "filing_type": "10-K",
+    "expected_sections": ["business"],
+    "expected_keywords": ["retail", "online", "distribution", "channel", "reseller"]
+  },
+  {
+    "id": "msft_risk_competition",
+    "difficulty": "standard",
+    "question": "What competitive or market risks does Microsoft highlight?",
+    "company": "MSFT",
+    "filing_type": "10-K",
+    "expected_sections": ["risk_factors"],
+    "expected_keywords": ["competition", "competitive", "market", "cloud", "platform"]
+  },
+  {
+    "id": "msft_mda_operating_performance",
+    "difficulty": "standard",
+    "question": "What management commentary does Microsoft provide about recent operating performance?",
+    "company": "MSFT",
+    "filing_type": "10-Q",
+    "expected_sections": ["mda"],
+    "expected_keywords": ["revenue", "operating", "income", "growth", "segment"]
+  },
+  {
+    "id": "msft_business_cloud",
+    "difficulty": "standard",
+    "question": "How does Microsoft describe its cloud and enterprise offerings?",
+    "company": "MSFT",
+    "filing_type": "10-K",
+    "expected_sections": ["business"],
+    "expected_keywords": ["azure", "cloud", "server", "productivity", "enterprise"]
+  },
+  {
+    "id": "msft_risk_security",
+    "difficulty": "standard",
+    "question": "What security, privacy, or cyber risks does Microsoft discuss?",
+    "company": "MSFT",
+    "filing_type": "10-K",
+    "expected_sections": ["risk_factors"],
+    "expected_keywords": ["security", "privacy", "cyber", "data", "breach"]
+  },
+  {
+    "id": "msft_mda_cloud_growth",
+    "difficulty": "standard",
+    "question": "How does Microsoft discuss recent cloud growth or cloud demand?",
+    "company": "MSFT",
+    "filing_type": "10-Q",
+    "expected_sections": ["mda"],
+    "expected_keywords": ["azure", "cloud", "growth", "demand", "revenue"]
+  },
+  {
+    "id": "msft_business_linkedin_gaming",
+    "difficulty": "standard",
+    "question": "How does Microsoft describe businesses like LinkedIn, gaming, or productivity software?",
+    "company": "MSFT",
+    "filing_type": "10-K",
+    "expected_sections": ["business"],
+    "expected_keywords": ["linkedin", "gaming", "office", "productivity", "xbox"]
+  },
+  {
+    "id": "nvda_ai_demand",
+    "difficulty": "standard",
+    "question": "How does Nvidia discuss AI-related demand or product momentum?",
+    "company": "NVDA",
+    "filing_type": "10-Q",
+    "expected_sections": ["mda", "business"],
+    "expected_keywords": ["ai", "demand", "data center", "gpu", "platform"]
+  },
+  {
+    "id": "nvda_risk_customers",
+    "difficulty": "standard",
+    "question": "What customer concentration or supply risks does Nvidia mention?",
+    "company": "NVDA",
+    "filing_type": "10-K",
+    "expected_sections": ["risk_factors"],
+    "expected_keywords": ["customer", "supplier", "supply", "manufacturing", "inventory"]
+  },
+  {
+    "id": "nvda_business_segments",
+    "difficulty": "standard",
+    "question": "How does Nvidia describe its main business platforms or markets?",
+    "company": "NVDA",
+    "filing_type": "10-K",
+    "expected_sections": ["business"],
+    "expected_keywords": ["data center", "gaming", "automotive", "professional visualization", "compute"]
+  },
+  {
+    "id": "nvda_risk_export_controls",
+    "difficulty": "standard",
+    "question": "What risks does Nvidia mention around export controls or government restrictions?",
+    "company": "NVDA",
+    "filing_type": "10-K",
+    "expected_sections": ["risk_factors"],
+    "expected_keywords": ["export", "government", "restriction", "regulation", "china"]
+  },
+  {
+    "id": "nvda_mda_data_center",
+    "difficulty": "standard",
+    "question": "How does Nvidia discuss recent Data Center performance?",
+    "company": "NVDA",
+    "filing_type": "10-Q",
+    "expected_sections": ["mda"],
+    "expected_keywords": ["data center", "revenue", "growth", "demand", "platform"]
+  },
+  {
+    "id": "nvda_business_ecosystem",
+    "difficulty": "standard",
+    "question": "How does Nvidia describe its software, ecosystem, or platform strategy?",
+    "company": "NVDA",
+    "filing_type": "10-K",
+    "expected_sections": ["business"],
+    "expected_keywords": ["software", "ecosystem", "platform", "cuda", "developer"]
+  },
+  {
+    "id": "aapl_hard_dependency_exposure",
+    "difficulty": "hard",
+    "question": "Where does Apple describe dependencies that could materially affect product availability or delivery?",
+    "company": "AAPL",
+    "filing_type": "10-K",
+    "expected_sections": ["risk_factors", "business"],
+    "expected_keywords": ["supplier", "manufacturing", "component", "availability", "delivery"]
+  },
+  {
+    "id": "aapl_hard_recent_mix",
+    "difficulty": "hard",
+    "question": "Which part of Apple's filing is most likely to explain what changed in the business most recently?",
+    "company": "AAPL",
+    "filing_type": "10-Q",
+    "expected_sections": ["mda"],
+    "expected_keywords": ["recent", "results", "operating", "revenue", "quarter"]
+  },
+  {
+    "id": "msft_hard_platform_positioning",
+    "difficulty": "hard",
+    "question": "Where does Microsoft explain what it actually sells across major commercial offerings?",
+    "company": "MSFT",
+    "filing_type": "10-K",
+    "expected_sections": ["business"],
+    "expected_keywords": ["products", "services", "cloud", "commercial", "offerings"]
+  },
+  {
+    "id": "msft_hard_downside_exposure",
+    "difficulty": "hard",
+    "question": "What part of the filing would best support an investor worried about downside from market pressure or execution issues?",
+    "company": "MSFT",
+    "filing_type": "10-K",
+    "expected_sections": ["risk_factors"],
+    "expected_keywords": ["risk", "competition", "market", "execution", "adverse"]
+  },
+  {
+    "id": "msft_hard_recent_cloud_shift",
+    "difficulty": "hard",
+    "question": "If I wanted the section most likely to explain a recent change in cloud momentum, where should retrieval land?",
+    "company": "MSFT",
+    "filing_type": "10-Q",
+    "expected_sections": ["mda"],
+    "expected_keywords": ["cloud", "growth", "recent", "results", "demand"]
+  },
+  {
+    "id": "nvda_hard_operating_change",
+    "difficulty": "hard",
+    "question": "What section best explains how Nvidia's recent operating picture changed over the latest period?",
+    "company": "NVDA",
+    "filing_type": "10-Q",
+    "expected_sections": ["mda"],
+    "expected_keywords": ["recent", "results", "operating", "revenue", "performance"]
+  },
+  {
+    "id": "nvda_hard_market_identity",
+    "difficulty": "hard",
+    "question": "Where would you look to understand Nvidia's identity as a company and the markets it serves?",
+    "company": "NVDA",
+    "filing_type": "10-K",
+    "expected_sections": ["business"],
+    "expected_keywords": ["markets", "platform", "software", "data center", "gaming"]
+  },
+  {
+    "id": "nvda_hard_constraint_exposure",
+    "difficulty": "hard",
+    "question": "Which section is most likely to cover external constraints that could disrupt Nvidia's growth story?",
+    "company": "NVDA",
+    "filing_type": "10-K",
+    "expected_sections": ["risk_factors"],
+    "expected_keywords": ["export", "restriction", "supply", "government", "customer"]
+  }
+]
