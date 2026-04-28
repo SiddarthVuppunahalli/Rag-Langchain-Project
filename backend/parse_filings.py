@@ -9,23 +9,39 @@ from pathlib import Path
 from config import PARSED_FILINGS_DIR, RAW_FILINGS_DIR
 
 
-SECTION_SPECS = [
-    {
-        "name": "business",
-        "start_pattern": r"item\s+1\.*\s+business",
-        "end_patterns": [r"item\s+1a\.*\s+risk\s+factors"],
-    },
-    {
-        "name": "risk_factors",
-        "start_pattern": r"item\s+1a\.*\s+risk\s+factors",
-        "end_patterns": [r"item\s+1b\.*", r"item\s+2\.*"],
-    },
-    {
-        "name": "mda",
-        "start_pattern": r"item\s+7\.*\s+management(?:'|\u2019)?s\s+discussion\s+and\s+analysis",
-        "end_patterns": [r"item\s+7a\.*", r"item\s+8\.*"],
-    },
-]
+SECTION_SPECS_BY_FILING_TYPE = {
+    "10-K": [
+        {
+            "name": "business",
+            "start_pattern": r"item\s+1\.*\s+business",
+            "end_patterns": [r"item\s+1a\.*\s+risk\s+factors"],
+        },
+        {
+            "name": "risk_factors",
+            "start_pattern": r"item\s+1a\.*\s+risk\s+factors",
+            "end_patterns": [r"item\s+1b\.*", r"item\s+2\.*"],
+        },
+        {
+            "name": "mda",
+            "start_pattern": r"item\s+7\.*\s+management(?:'|\u2019)?s\s+discussion\s+and\s+analysis",
+            "end_patterns": [r"item\s+7a\.*", r"item\s+8\.*"],
+        },
+    ],
+    "10-Q": [
+        {
+            "name": "mda",
+            "start_pattern": r"item\s+2\.*\s+management(?:'|\u2019)?s\s+discussion\s+and\s+analysis",
+            "end_patterns": [r"item\s+3\.*", r"item\s+4\.*", r"part\s+ii"],
+            "selection_strategy": "latest_non_toc",
+        },
+        {
+            "name": "risk_factors",
+            "start_pattern": r"item\s+1a\.*\s+risk\s+factors",
+            "end_patterns": [r"item\s+2\.*\s+unregistered", r"item\s+5\.*", r"item\s+6\.*"],
+            "selection_strategy": "latest_non_toc",
+        },
+    ],
+}
 
 MIN_SECTION_SPAN = 1500
 
@@ -49,7 +65,45 @@ def clean_filing_text(raw_text: str) -> str:
     return text.strip()
 
 
-def find_section_span(text: str, start_pattern: str, end_patterns: list[str]) -> tuple[int, int] | None:
+def looks_like_table_of_contents(candidate_text: str) -> bool:
+    early_text = candidate_text[:300].lower()
+    item_refs = re.findall(r"item\s+\d+[a-z]?\.*", early_text, flags=re.IGNORECASE)
+    distinct_item_refs = set(item_refs)
+    has_page_number_bridge = bool(re.search(r"\b\d{1,3}\s+item\s+\d", early_text, flags=re.IGNORECASE))
+    return has_page_number_bridge or len(distinct_item_refs) >= 2 or len(item_refs) >= 3
+
+
+def choose_candidate_span(
+    candidates: list[tuple[int, int]],
+    text: str,
+    selection_strategy: str = "longest_non_toc",
+) -> tuple[int, int] | None:
+    if not candidates:
+        return None
+
+    non_toc_candidates = [
+        span for span in candidates if not looks_like_table_of_contents(text[span[0]:span[1]])
+    ]
+
+    if selection_strategy == "latest_non_toc":
+        if non_toc_candidates:
+            return max(non_toc_candidates, key=lambda span: span[0])
+        return max(candidates, key=lambda span: span[0])
+
+    if non_toc_candidates:
+        return max(non_toc_candidates, key=lambda span: span[1] - span[0])
+
+    # SEC filings often repeat section headings in a table of contents near the top.
+    # When every match looks TOC-like, fall back to the longest span we found.
+    return max(candidates, key=lambda span: span[1] - span[0])
+
+
+def find_section_span(
+    text: str,
+    start_pattern: str,
+    end_patterns: list[str],
+    selection_strategy: str = "longest_non_toc",
+) -> tuple[int, int] | None:
     candidates: list[tuple[int, int]] = []
     for start_match in re.finditer(start_pattern, text, flags=re.IGNORECASE):
         start = start_match.start()
@@ -68,21 +122,18 @@ def find_section_span(text: str, start_pattern: str, end_patterns: list[str]) ->
             continue
         candidates.append((start, end))
 
-    if not candidates:
-        return None
-
-    # SEC filings often repeat section headings in a table of contents near the top.
-    # Choosing the longest candidate span usually selects the real body section instead.
-    return max(candidates, key=lambda span: span[1] - span[0])
+    return choose_candidate_span(candidates, text, selection_strategy=selection_strategy)
 
 
-def extract_sections(clean_text: str) -> list[ParsedSection]:
+def extract_sections(clean_text: str, filing_type: str) -> list[ParsedSection]:
     sections: list[ParsedSection] = []
-    for section_spec in SECTION_SPECS:
+    section_specs = SECTION_SPECS_BY_FILING_TYPE.get(filing_type, [])
+    for section_spec in section_specs:
         span = find_section_span(
             clean_text,
             section_spec["start_pattern"],
             section_spec["end_patterns"],
+            selection_strategy=section_spec.get("selection_strategy", "longest_non_toc"),
         )
         if not span:
             continue
@@ -105,13 +156,13 @@ def extract_sections(clean_text: str) -> list[ParsedSection]:
 def parse_filing_file(filing_path: Path) -> dict:
     raw_text = filing_path.read_text(encoding="utf-8", errors="ignore")
     clean_text = clean_filing_text(raw_text)
-    sections = extract_sections(clean_text)
 
     path_parts = filing_path.parts
     ticker = path_parts[-3]
     filing_type = path_parts[-2]
     filing_id = filing_path.stem
     filing_date, accession_number = filing_id.split("_", 1)
+    sections = extract_sections(clean_text, filing_type)
 
     return {
         "ticker": ticker,

@@ -7,7 +7,7 @@ import os
 import re
 from pathlib import Path
 from statistics import mean
-from time import perf_counter
+from time import perf_counter, sleep
 
 from config import BASE_DIR, DEFAULT_TOP_K, EVAL_RESULTS_DIR
 from rag_pipeline import get_rag_pipeline
@@ -16,6 +16,17 @@ from rag_pipeline import get_rag_pipeline
 BENCHMARK_PATH = BASE_DIR / "benchmarks" / "sec_benchmark.json"
 ENABLE_GENERATION_EVAL = os.getenv("EVAL_ENABLE_GENERATION", "false").lower() == "true"
 MAX_CASES = int(os.getenv("EVAL_MAX_CASES", "0"))
+CASE_IDS_FILTER = {
+    case_id.strip()
+    for case_id in os.getenv("EVAL_CASE_IDS", "").split(",")
+    if case_id.strip()
+}
+EXPERIMENT_FILTER = {
+    experiment_name.strip()
+    for experiment_name in os.getenv("EVAL_EXPERIMENTS", "").split(",")
+    if experiment_name.strip()
+}
+GENERATION_MIN_INTERVAL_SECONDS = float(os.getenv("EVAL_GENERATION_MIN_INTERVAL_SECONDS", "0"))
 EXPERIMENT_CONFIGS = [
     {
         "name": "company_and_filing_k3",
@@ -82,6 +93,8 @@ def evaluate_case(pipeline, case: dict, experiment: dict) -> dict:
     context_characters = sum(len(doc.page_content) for doc in retrieved_documents)
 
     if ENABLE_GENERATION_EVAL:
+        if GENERATION_MIN_INTERVAL_SECONDS > 0:
+            sleep(GENERATION_MIN_INTERVAL_SECONDS)
         result = pipeline.answer(
             question=case["question"],
             company=company,
@@ -99,6 +112,7 @@ def evaluate_case(pipeline, case: dict, experiment: dict) -> dict:
         "experiment": experiment["name"],
         "case_id": case["id"],
         "difficulty": case.get("difficulty", "standard"),
+        "split": case.get("split", "tuned"),
         "company": case["company"],
         "expected_filing_type": case["filing_type"],
         "question": case["question"],
@@ -147,12 +161,20 @@ def summarize_experiment(rows: list[dict], experiment: dict) -> dict:
         difficulty_rows = [row for row in rows if row["difficulty"] == difficulty]
         by_difficulty[difficulty] = summarize_rows(difficulty_rows)
 
+    by_split: dict[str, dict] = {}
+    for split in sorted({row["split"] for row in rows}):
+        split_rows = [row for row in rows if row["split"] == split]
+        by_split[split] = summarize_rows(split_rows)
+
     summary["by_difficulty"] = by_difficulty
+    summary["by_split"] = by_split
     return summary
 
 
 def run_experiments() -> tuple[list[dict], list[dict]]:
     benchmark_cases = load_benchmark_cases()
+    if CASE_IDS_FILTER:
+        benchmark_cases = [case for case in benchmark_cases if case["id"] in CASE_IDS_FILTER]
     if MAX_CASES > 0:
         benchmark_cases = benchmark_cases[:MAX_CASES]
     pipeline = get_rag_pipeline()
@@ -160,7 +182,13 @@ def run_experiments() -> tuple[list[dict], list[dict]]:
     all_rows: list[dict] = []
     summaries: list[dict] = []
 
-    for experiment in EXPERIMENT_CONFIGS:
+    experiments = [
+        experiment
+        for experiment in EXPERIMENT_CONFIGS
+        if not EXPERIMENT_FILTER or experiment["name"] in EXPERIMENT_FILTER
+    ]
+
+    for experiment in experiments:
         experiment_rows = [evaluate_case(pipeline, case, experiment) for case in benchmark_cases]
         all_rows.extend(experiment_rows)
         summaries.append(summarize_experiment(experiment_rows, experiment))
@@ -201,6 +229,18 @@ def write_markdown_summary(path: Path, summaries: list[dict]) -> None:
                 f"{difficulty_summary['section_hit_rate']:.4f} | "
                 f"{difficulty_summary['top1_section_hit_rate']:.4f} | "
                 f"{difficulty_summary['avg_total_ms']:.2f} |"
+            )
+        lines.append("")
+        lines.append(f"Split breakdown for `{summary['experiment']}`:")
+        lines.append("")
+        lines.append("| Split | Questions | Section Hit | Top-1 Hit | Avg Total ms |")
+        lines.append("| --- | ---: | ---: | ---: | ---: |")
+        for split, split_summary in summary["by_split"].items():
+            lines.append(
+                f"| {split} | {split_summary['questions_evaluated']} | "
+                f"{split_summary['section_hit_rate']:.4f} | "
+                f"{split_summary['top1_section_hit_rate']:.4f} | "
+                f"{split_summary['avg_total_ms']:.2f} |"
             )
         lines.append("")
 

@@ -2,6 +2,7 @@
   {
     "id": "aapl_risk_supply_chain",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "What risks does Apple describe around supply chain concentration or manufacturing dependence?",
     "company": "AAPL",
     "filing_type": "10-K",
@@ -11,6 +12,7 @@
   {
     "id": "aapl_mda_revenue",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "How does Apple describe recent revenue performance and business conditions?",
     "company": "AAPL",
     "filing_type": "10-Q",
@@ -20,6 +22,7 @@
   {
     "id": "aapl_business_segments",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "How does Apple describe its products and services business segments?",
     "company": "AAPL",
     "filing_type": "10-K",
@@ -29,6 +32,7 @@
   {
     "id": "aapl_risk_regulation",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "What regulatory or legal risks does Apple highlight?",
     "company": "AAPL",
     "filing_type": "10-K",
@@ -38,6 +42,7 @@
   {
     "id": "aapl_mda_services",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "How does Apple discuss services revenue or services growth?",
     "company": "AAPL",
     "filing_type": "10-Q",
@@ -47,6 +52,7 @@
   {
     "id": "aapl_business_distribution",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "How does Apple describe the way it sells and distributes its products?",
     "company": "AAPL",
     "filing_type": "10-K",
@@ -56,6 +62,7 @@
   {
     "id": "msft_risk_competition",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "What competitive or market risks does Microsoft highlight?",
     "company": "MSFT",
     "filing_type": "10-K",
@@ -65,6 +72,7 @@
   {
     "id": "msft_mda_operating_performance",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "What management commentary does Microsoft provide about recent operating performance?",
     "company": "MSFT",
     "filing_type": "10-Q",
@@ -74,6 +82,7 @@
   {
     "id": "msft_business_cloud",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "How does Microsoft describe its cloud and enterprise offerings?",
     "company": "MSFT",
     "filing_type": "10-K",
@@ -83,6 +92,7 @@
   {
     "id": "msft_risk_security",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "What security, privacy, or cyber risks does Microsoft discuss?",
     "company": "MSFT",
     "filing_type": "10-K",
@@ -92,6 +102,7 @@
   {
     "id": "msft_mda_cloud_growth",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "How does Microsoft discuss recent cloud growth or cloud demand?",
     "company": "MSFT",
     "filing_type": "10-Q",
@@ -101,6 +112,7 @@
   {
     "id": "msft_business_linkedin_gaming",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "How does Microsoft describe businesses like LinkedIn, gaming, or productivity software?",
     "company": "MSFT",
     "filing_type": "10-K",
@@ -110,6 +122,7 @@
   {
     "id": "nvda_ai_demand",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "How does Nvidia discuss AI-related demand or product momentum?",
     "company": "NVDA",
     "filing_type": "10-Q",
@@ -119,6 +132,7 @@
   {
     "id": "nvda_risk_customers",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "What customer concentration or supply risks does Nvidia mention?",
     "company": "NVDA",
     "filing_type": "10-K",
@@ -128,6 +142,7 @@
   {
     "id": "nvda_business_segments",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "How does Nvidia describe its main business platforms or markets?",
     "company": "NVDA",
     "filing_type": "10-K",
@@ -137,6 +152,7 @@
   {
     "id": "nvda_risk_export_controls",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "What risks does Nvidia mention around export controls or government restrictions?",
     "company": "NVDA",
     "filing_type": "10-K",
@@ -146,6 +162,7 @@
   {
     "id": "nvda_mda_data_center",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "How does Nvidia discuss recent Data Center performance?",
     "company": "NVDA",
     "filing_type": "10-Q",
@@ -155,6 +172,7 @@
   {
     "id": "nvda_business_ecosystem",
     "difficulty": "standard",
+    "split": "tuned",
     "question": "How does Nvidia describe its software, ecosystem, or platform strategy?",
     "company": "NVDA",
     "filing_type": "10-K",
@@ -164,6 +182,7 @@
   {
     "id": "aapl_hard_dependency_exposure",
     "difficulty": "hard",
+    "split": "tuned",
     "question": "Where does Apple describe dependencies that could materially affect product availability or delivery?",
     "company": "AAPL",
     "filing_type": "10-K",
@@ -173,6 +192,7 @@
   {
     "id": "aapl_hard_recent_mix",
     "difficulty": "hard",
+    "split": "tuned",
     "question": "Which part of Apple's filing is most likely to explain what changed in the business most recently?",
     "company": "AAPL",
     "filing_type": "10-Q",
@@ -182,6 +202,7 @@
   {
     "id": "msft_hard_platform_positioning",
     "difficulty": "hard",
+    "split": "tuned",
     "question": "Where does Microsoft explain what it actually sells across major commercial offerings?",
     "company": "MSFT",
     "filing_type": "10-K",
@@ -191,6 +212,7 @@
   {
     "id": "msft_hard_downside_exposure",
     "difficulty": "hard",
+    "split": "tuned",
     "question": "What part of the filing would best support an investor worried about downside from market pressure or execution issues?",
     "company": "MSFT",
     "filing_type": "10-K",
@@ -200,6 +222,7 @@
   {
     "id": "msft_hard_recent_cloud_shift",
     "difficulty": "hard",
+    "split": "tuned",
     "question": "If I wanted the section most likely to explain a recent change in cloud momentum, where should retrieval land?",
     "company": "MSFT",
     "filing_type": "10-Q",
@@ -209,6 +232,7 @@
   {
     "id": "nvda_hard_operating_change",
     "difficulty": "hard",
+    "split": "tuned",
     "question": "What section best explains how Nvidia's recent operating picture changed over the latest period?",
     "company": "NVDA",
     "filing_type": "10-Q",
@@ -218,6 +242,7 @@
   {
     "id": "nvda_hard_market_identity",
     "difficulty": "hard",
+    "split": "tuned",
     "question": "Where would you look to understand Nvidia's identity as a company and the markets it serves?",
     "company": "NVDA",
     "filing_type": "10-K",
@@ -227,10 +252,91 @@
   {
     "id": "nvda_hard_constraint_exposure",
     "difficulty": "hard",
+    "split": "tuned",
     "question": "Which section is most likely to cover external constraints that could disrupt Nvidia's growth story?",
     "company": "NVDA",
     "filing_type": "10-K",
     "expected_sections": ["risk_factors"],
     "expected_keywords": ["export", "restriction", "supply", "government", "customer"]
+  },
+  {
+    "id": "aapl_blind_execution_pressures",
+    "difficulty": "hard",
+    "split": "blind",
+    "question": "If an analyst wanted management's own discussion of what moved results this period, where should the system look first for Apple?",
+    "company": "AAPL",
+    "filing_type": "10-Q",
+    "expected_sections": ["mda"],
+    "expected_keywords": ["results", "net sales", "quarter", "operating", "performance"]
+  },
+  {
+    "id": "aapl_blind_go_to_market",
+    "difficulty": "hard",
+    "split": "blind",
+    "question": "Which part of Apple's annual filing best explains how the company reaches customers and monetizes its lineup?",
+    "company": "AAPL",
+    "filing_type": "10-K",
+    "expected_sections": ["business"],
+    "expected_keywords": ["retail", "online", "reseller", "distribution", "sales"]
+  },
+  {
+    "id": "msft_blind_adverse_conditions",
+    "difficulty": "hard",
+    "split": "blind",
+    "question": "Where would an investor most likely find Microsoft's discussion of things that could go wrong because of industry pressure or internal stumbles?",
+    "company": "MSFT",
+    "filing_type": "10-K",
+    "expected_sections": ["risk_factors"],
+    "expected_keywords": ["competition", "market", "adverse", "execution", "risk"]
+  },
+  {
+    "id": "msft_blind_commercial_map",
+    "difficulty": "hard",
+    "split": "blind",
+    "question": "If you needed the section that maps out Microsoft's major commercial businesses and platforms, where should retrieval land?",
+    "company": "MSFT",
+    "filing_type": "10-K",
+    "expected_sections": ["business"],
+    "expected_keywords": ["azure", "commercial", "productivity", "cloud", "platform"]
+  },
+  {
+    "id": "msft_blind_recent_demand_shift",
+    "difficulty": "hard",
+    "split": "blind",
+    "question": "What section is most likely to explain whether enterprise demand looked different in Microsoft's latest quarter?",
+    "company": "MSFT",
+    "filing_type": "10-Q",
+    "expected_sections": ["mda"],
+    "expected_keywords": ["quarter", "revenue", "demand", "growth", "results"]
+  },
+  {
+    "id": "nvda_blind_growth_obstacles",
+    "difficulty": "hard",
+    "split": "blind",
+    "question": "Where should the system look for Nvidia's discussion of outside forces that could slow or derail growth?",
+    "company": "NVDA",
+    "filing_type": "10-K",
+    "expected_sections": ["risk_factors"],
+    "expected_keywords": ["export", "government", "restriction", "supply", "customer"]
+  },
+  {
+    "id": "nvda_blind_company_profile",
+    "difficulty": "hard",
+    "split": "blind",
+    "question": "Which section best introduces what Nvidia is, the categories it serves, and the shape of its platform business?",
+    "company": "NVDA",
+    "filing_type": "10-K",
+    "expected_sections": ["business"],
+    "expected_keywords": ["platform", "markets", "data center", "gaming", "software"]
+  },
+  {
+    "id": "nvda_blind_latest_operating_story",
+    "difficulty": "hard",
+    "split": "blind",
+    "question": "If the question is how Nvidia's latest quarter unfolded financially, where should retrieval go first?",
+    "company": "NVDA",
+    "filing_type": "10-Q",
+    "expected_sections": ["mda"],
+    "expected_keywords": ["quarter", "revenue", "results", "operating", "performance"]
   }
 ]

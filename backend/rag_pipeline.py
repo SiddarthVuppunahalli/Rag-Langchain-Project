@@ -3,10 +3,14 @@ from __future__ import annotations
 from time import perf_counter
 from typing import Any
 
-from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
+
+try:
+    from langchain_chroma import Chroma
+except ImportError:  # pragma: no cover - fallback for existing local environments
+    from langchain_community.vectorstores import Chroma
 
 from config import (
     CHROMA_PATH,
@@ -31,41 +35,84 @@ When you answer:
 
 SECTION_INTENT_RULES = {
     "risk_factors": [
-        "risk",
-        "risks",
-        "competition",
-        "competitive",
-        "concentration",
-        "supplier",
-        "supply",
-        "manufacturing",
-        "dependence",
-        "inventory",
-        "customer concentration",
+        ("risk", 2),
+        ("risks", 2),
+        ("competition", 2),
+        ("competitive", 2),
+        ("concentration", 2),
+        ("supplier", 2),
+        ("supply", 2),
+        ("manufacturing", 2),
+        ("dependence", 2),
+        ("inventory", 2),
+        ("customer concentration", 3),
+        ("downside", 3),
+        ("exposure", 2),
+        ("constraint", 3),
+        ("constraints", 3),
+        ("disrupt", 3),
+        ("worried", 2),
+        ("materially affect", 3),
+        ("external constraints", 4),
+        ("export controls", 4),
+        ("government restrictions", 4),
+        ("execution issues", 3),
+        ("go wrong", 4),
+        ("things that could go wrong", 5),
+        ("industry pressure", 4),
+        ("internal stumbles", 4),
+        ("outside forces", 5),
+        ("slow or derail", 5),
+        ("derail growth", 5),
+        ("growth obstacles", 5),
+        ("adverse conditions", 4),
     ],
     "mda": [
-        "revenue",
-        "operating",
-        "performance",
-        "results",
-        "quarter",
-        "demand",
-        "momentum",
-        "growth",
-        "margin",
-        "profitability",
-        "commentary",
+        ("revenue", 2),
+        ("operating", 2),
+        ("performance", 2),
+        ("results", 2),
+        ("quarter", 2),
+        ("demand", 2),
+        ("momentum", 3),
+        ("growth", 2),
+        ("margin", 2),
+        ("profitability", 2),
+        ("commentary", 2),
+        ("recent", 2),
+        ("changed", 3),
+        ("change", 2),
+        ("latest period", 3),
+        ("most recently", 3),
+        ("operating picture", 4),
+        ("recent change", 4),
+        ("cloud momentum", 4),
+        ("unfolded financially", 5),
+        ("moved results", 4),
+        ("this period", 2),
     ],
     "business": [
-        "business",
-        "segment",
-        "segments",
-        "offerings",
-        "products",
-        "services",
-        "platforms",
-        "markets",
-        "describe",
+        ("business", 2),
+        ("segment", 2),
+        ("segments", 2),
+        ("offerings", 2),
+        ("products", 2),
+        ("services", 2),
+        ("platforms", 2),
+        ("markets", 2),
+        ("describe", 1),
+        ("identity", 3),
+        ("what it sells", 4),
+        ("markets it serves", 4),
+        ("commercial offerings", 4),
+        ("platform strategy", 3),
+        ("ecosystem", 3),
+        ("reaches customers", 5),
+        ("monetizes", 4),
+        ("lineup", 3),
+        ("go to market", 5),
+        ("annual filing", 2),
+        ("major commercial businesses", 4),
     ],
 }
 
@@ -118,11 +165,15 @@ def infer_section_priority(question: str) -> list[str]:
     normalized_question = question.lower()
     scores: list[tuple[str, int]] = []
 
-    for section, keywords in SECTION_INTENT_RULES.items():
-        score = sum(1 for keyword in keywords if keyword in normalized_question)
+    for section, weighted_keywords in SECTION_INTENT_RULES.items():
+        score = sum(weight for keyword, weight in weighted_keywords if keyword in normalized_question)
         scores.append((section, score))
 
-    ranked_sections = [section for section, score in sorted(scores, key=lambda item: item[1], reverse=True) if score > 0]
+    ranked_sections = [
+        section
+        for section, score in sorted(scores, key=lambda item: item[1], reverse=True)
+        if score > 0
+    ]
     fallback_order = ["mda", "business", "risk_factors"]
     for section in fallback_order:
         if section not in ranked_sections:

@@ -3,10 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+try:
+    from langchain_chroma import Chroma
+except ImportError:  # pragma: no cover - fallback for existing local environments
+    from langchain_community.vectorstores import Chroma
 
 from config import (
     CHROMA_PATH,
